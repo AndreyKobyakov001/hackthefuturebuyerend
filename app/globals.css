@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add these new styles for the Gemini loading animation */
+.gemini-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+/* Add these new styles for the Gemini loading animation */
+.gemini-stars {
+  /* display: flex;
+  flex-direction: column;
+  align-items: center; /* Center the group of stars */
+  /* justify-content: center;
+  gap: 4px;
+  position: relative;
+  width: 24px; /* Adjust width to fit the offset stars */
+  /* height: 48px; Adjust height for the triangular arrangement */ 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.gemini-star {
+  width: 12px;
+  height: 12px;
+  position: relative;
+  animation: gemini-shine 1.5s infinite;
+}
+
+.gemini-star::before,
+.gemini-star::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  clip-path: polygon(
+    50% 0%,
+    75% 50%,
+    50% 100%,
+    25% 50%
+  ); /* 4-pointed star shape */
+}
+
+/* Position the stars in a triangular arrangement */
+.gemini-star:nth-child(1) {
+  color: #ea4335; /* Google Red */
+  animation-delay: 0s;
+  margin-left: 6px; /* Offset the top star slightly to the right */
+}
+
+.gemini-star:nth-child(2) {
+  color: #8e2de2; /* Purple */
+  animation-delay: 0.2s;
+  margin-left: -6px; /* Offset the center star slightly to the left */
+}
+
+.gemini-star:nth-child(3) {
+  color: #4285f4; /* Google Blue */
+  animation-delay: 0.4s;
+  margin-left: 6px; /* Offset the bottom star slightly to the right */
+}
+
+@keyframes gemini-shine {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.gemini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: gemini-shine 1.5s infinite;
+}
+
+.gemini-dot:nth-child(1) {
+  background: #ea4335; /* Google Red */
+  animation-delay: 0s;
+}
+
+.gemini-dot:nth-child(2) {
+  background: #8e2de2; /* Purple */
+  animation-delay: 0.2s;
+}
+
+.gemini-dot:nth-child(3) {
+  background: #4285f4; /* Google Blue */
+  animation-delay: 0.4s;
+}
+
+@keyframes gemini-shine {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background-color: #f5f5f5;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
