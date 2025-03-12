@@ -51,6 +51,9 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
     }
   }
 
+  // Check if the image doesn't match the description (wrong item)
+  const isWrongItem = analysisResult && analysisResult.order_consistency === "inconsistent"
+
   // Redirect back to orders page if no items are selected
   useEffect(() => {
     if (selectedItems.length === 0) {
@@ -173,8 +176,8 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
         </div>
       )}
 
-      {/* Only show marketplace options after analysis is complete and if the decision is "reject" */}
-      {analysisResult && analysisResult.final_decision === "reject" && item && (
+      {/* Only show marketplace options after analysis is complete, if the decision is "reject", and the item matches the description */}
+      {analysisResult && analysisResult.final_decision === "reject" && item && !isWrongItem && (
         <MarketplaceOptions
           itemName={item.name}
           condition={analysisResult.condition_grade}
@@ -182,6 +185,20 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
           analysisResult={analysisResult}
           uploadedImages={uploadedImages}
         />
+      )}
+
+      {/* Show a message if the return is rejected and the item doesn't match the description */}
+      {analysisResult && analysisResult.final_decision === "reject" && isWrongItem && (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+          <h3 className="text-lg font-medium mb-2">Return Status</h3>
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-md">
+            <p className="font-medium">Marketplace Options Unavailable</p>
+            <p className="text-sm mt-1">
+              The item in the image doesn't appear to match the description of the ordered item. Marketplace options are
+              not available for mismatched items. Please contact customer service for assistance.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   )

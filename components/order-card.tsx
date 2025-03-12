@@ -1,5 +1,5 @@
 "use client"
-import { ChevronDown, ChevronUp, Package } from "lucide-react"
+import { ChevronDown, ChevronUp, Package, CheckCircle } from "lucide-react"
 import { useState } from "react"
 import { useReturn, type ReturnItem } from "@/context/return-context"
 import { useRouter } from "next/navigation"
@@ -30,7 +30,14 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, isExpanded, onToggleExpand }: OrderCardProps) {
-  const { selectedItems, addItemToReturn, removeItemFromReturn } = useReturn()
+  const {
+    selectedItems,
+    addItemToReturn,
+    removeItemFromReturn,
+    isItemProcessed,
+    getProcessTypeForItem,
+    clearReturnForm,
+  } = useReturn()
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null)
   const router = useRouter()
 
@@ -39,6 +46,11 @@ export function OrderCard({ order, isExpanded, onToggleExpand }: OrderCardProps)
   }
 
   const toggleItemSelection = (item: OrderItem) => {
+    // Don't allow selection of processed items
+    if (isItemProcessed(item.id)) {
+      return
+    }
+
     if (isItemSelected(item.id)) {
       removeItemFromReturn(item.id)
     } else {
@@ -66,8 +78,21 @@ export function OrderCard({ order, isExpanded, onToggleExpand }: OrderCardProps)
   }
 
   const handleReturnClick = () => {
+    // Clear the form before navigating
+    clearReturnForm()
     // Navigate to the returns page
     router.push("/returns")
+  }
+
+  // Get the process status label for an item
+  const getProcessStatusLabel = (itemId: number) => {
+    const processType = getProcessTypeForItem(itemId)
+    if (processType === "returned") {
+      return "Already Returned"
+    } else if (processType === "resold") {
+      return "Resold"
+    }
+    return null
   }
 
   return (
@@ -98,51 +123,68 @@ export function OrderCard({ order, isExpanded, onToggleExpand }: OrderCardProps)
           <h4 className="font-medium mb-2">Items</h4>
 
           <div className="space-y-4 mb-4">
-            {order.items.map((item) => (
-              <div key={item.id} className="border border-gray-100 rounded-md p-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`item-${item.id}`}
-                    checked={isItemSelected(item.id)}
-                    onChange={() => toggleItemSelection(item)}
-                    className="h-4 w-4 text-[#f90] border-gray-300 rounded focus:ring-[#f90] mr-3"
-                  />
-                  <img
-                    src={item.image || "/placeholder.svg"}
-                    alt={item.name}
-                    className="w-12 h-12 object-cover rounded-md mr-3"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{item.name}</p>
-                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="text-sm font-medium mr-3">{item.price}</p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleItemDescription(item.id)
-                      }}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      {expandedItemId === item.id ? (
-                        <ChevronUp className="h-5 w-5" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+            {order.items.map((item) => {
+              const isProcessed = isItemProcessed(item.id)
+              const processStatusLabel = getProcessStatusLabel(item.id)
 
-                {expandedItemId === item.id && item.description && (
-                  <div className="mt-3 pl-8 pr-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                    <p className="font-medium text-xs text-gray-700 mb-1">Item Description:</p>
-                    <p>{item.description}</p>
+              return (
+                <div
+                  key={item.id}
+                  className={`border border-gray-100 rounded-md p-3 ${isProcessed ? "bg-gray-50" : ""}`}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`item-${item.id}`}
+                      checked={isItemSelected(item.id)}
+                      onChange={() => toggleItemSelection(item)}
+                      disabled={isProcessed}
+                      className={`h-4 w-4 ${isProcessed ? "text-gray-300 cursor-not-allowed" : "text-[#f90]"} border-gray-300 rounded focus:ring-[#f90] mr-3`}
+                    />
+                    <img
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      className={`w-12 h-12 object-cover rounded-md mr-3 ${isProcessed ? "opacity-70" : ""}`}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <p className={`font-medium text-sm ${isProcessed ? "text-gray-500" : ""}`}>{item.name}</p>
+                        {isProcessed && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full flex items-center">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            {processStatusLabel}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    </div>
+                    <div className="flex items-center">
+                      <p className={`text-sm font-medium mr-3 ${isProcessed ? "text-gray-500" : ""}`}>{item.price}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleItemDescription(item.id)
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        {expandedItemId === item.id ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {expandedItemId === item.id && item.description && (
+                    <div className="mt-3 pl-8 pr-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                      <p className="font-medium text-xs text-gray-700 mb-1">Item Description:</p>
+                      <p>{item.description}</p>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <div className="flex justify-between items-center border-t border-gray-200 pt-4">

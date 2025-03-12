@@ -185,4 +185,3 @@ export function ReturnScoreCard({ score }: ReturnScoreCardProps) {
   )
 }
 
-

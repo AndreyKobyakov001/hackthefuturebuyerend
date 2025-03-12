@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { OrderCard } from "./order-card"
+import { useReturn } from "@/context/return-context"
 
 // Sample order data
 const orders = [
@@ -82,18 +83,35 @@ const orders = [
 
 export function OrdersList() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null)
+  const { processedItems, clearReturnForm } = useReturn()
 
   const toggleOrderExpansion = (orderId: string) => {
     if (expandedOrderId === orderId) {
       setExpandedOrderId(null)
     } else {
       setExpandedOrderId(orderId)
+      // Clear the form when expanding an order to select items
+      clearReturnForm()
     }
+  }
+
+  // Don't filter out orders where all items have been processed
+  // Just use the original orders array
+  const ordersToDisplay = orders
+
+  // If there are no orders to display
+  if (ordersToDisplay.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
+        <h3 className="text-lg font-medium text-gray-700 mb-2">No orders available</h3>
+        <p className="text-gray-500">No orders found.</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
-      {orders.map((order) => (
+      {ordersToDisplay.map((order) => (
         <OrderCard
           key={order.id}
           order={order}

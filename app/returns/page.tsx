@@ -5,9 +5,16 @@ import { Header } from "@/components/header"
 import { ReturnItems } from "@/components/return-items"
 import { ReturnSummary } from "@/components/return-summary"
 import type { JudgmentResult } from "@/components/ai-judgment"
+import { useReturn } from "@/context/return-context" // Fix the import path
 
 export default function ReturnsPage() {
   const [analysisResult, setAnalysisResult] = useState<JudgmentResult | null>(null)
+  const { clearReturnForm } = useReturn() // Now this should work correctly
+
+  // Call clearReturnForm when the component mounts
+  useEffect(() => {
+    clearReturnForm()
+  }, []) // Empty dependency array so it only runs once on mount
 
   // Listen for the analysis complete event
   useEffect(() => {

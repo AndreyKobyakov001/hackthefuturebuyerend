@@ -1,7 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, ThumbsUp, MessageCircle, Share2, Search, Menu, Bell, Home, Users, ShoppingBag, Video, Flag, MapPin, MoreHorizontal } from 'lucide-react'
+import {
+  ArrowLeft,
+  ThumbsUp,
+  MessageCircle,
+  Share2,
+  Search,
+  Menu,
+  Bell,
+  Home,
+  Users,
+  ShoppingBag,
+  Video,
+  Flag,
+  MapPin,
+  MoreHorizontal,
+} from "lucide-react"
 import Link from "next/link"
 
 export default function FacebookDemoPage() {

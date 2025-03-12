@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Check, CreditCard, DollarSign, Loader2 } from "lucide-react"
 import type { JudgmentResult } from "./ai-judgment"
+import { useReturn } from "@/context/return-context"
 
 interface ReturnOptionsProps {
   decision: "refund" | "credit" | "reject"
@@ -16,6 +17,7 @@ export function ReturnOptions({ decision, itemName, itemPrice, onComplete, analy
   const [loading, setLoading] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [selectedOption, setSelectedOption] = useState<"refund" | "credit" | null>(null)
+  const { selectedItems, markItemAsProcessed } = useReturn()
 
   // Extract a brief reason for rejection from the AI's decision reasoning
   const getRejectReason = (): string => {
@@ -64,6 +66,14 @@ export function ReturnOptions({ decision, itemName, itemPrice, onComplete, analy
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    // Mark all selected items as processed
+    selectedItems.forEach((item) => {
+      // For refund or credit, mark as returned
+      // For reject with marketplace options, it would be marked as resold elsewhere
+      const processType = decision === "reject" ? "resold" : "returned"
+      markItemAsProcessed(item.id, item.orderId, processType)
+    })
 
     setLoading(false)
     setCompleted(true)

@@ -1,0 +1,3 @@
+runtime: nodejs20 # Replace with your runtime (e.g., python, java, etc.)
+env_variables:
+  GOOGLE_API_KEY : AIzaSyAdmvw000TeWQeU9Fpq1e4P_43DcIHp44c

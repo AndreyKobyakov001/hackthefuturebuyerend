@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { ExternalLink } from "lucide-react"
 import type { JudgmentResult } from "./ai-judgment"
 import { useRouter } from "next/navigation"
+import { useReturn } from "@/context/return-context"
 
 interface MarketplaceOption {
   name: string
@@ -33,6 +34,7 @@ export function MarketplaceOptions({
   const [options, setOptions] = useState<MarketplaceOption[]>([])
   const [selectedOption, setSelectedOption] = useState<string | null>("Facebook Marketplace")
   const router = useRouter()
+  const { selectedItems, markItemAsProcessed } = useReturn()
 
   useEffect(() => {
     // Generate marketplace options based on the analysis result
@@ -83,15 +85,8 @@ export function MarketplaceOptions({
       // Calculate base price
       const basePrice = priceValue * basePercentage
 
-      // Use AI-suggested price for Facebook if available, otherwise calculate it
-      const facebookPrice =
-        analysisResult.suggested_price || `$${Math.floor(basePrice * (1 + Math.random() * 0.05)).toFixed(2)}`
-
-      // Extract the numeric value from the Facebook price
-      const facebookNumericPrice = Number.parseFloat(facebookPrice.replace(/[^0-9.]/g, ""))
-
-      // Generate slightly different prices for other marketplaces, but all based on the condition
-      // Each marketplace has a slight variation but stays within the condition-appropriate range
+      // Calculate prices for all marketplaces consistently
+      const facebookPrice = `$${(basePrice * (1 + Math.random() * 0.05)).toFixed(2)}`
       const kijijiPrice = `$${(basePrice * (0.95 - Math.random() * 0.05)).toFixed(2)}`
       const poshmarkPrice = `$${(basePrice * (0.9 - Math.random() * 0.05)).toFixed(2)}`
       const offerupPrice = `$${(basePrice * (0.85 - Math.random() * 0.05)).toFixed(2)}`
@@ -101,7 +96,7 @@ export function MarketplaceOptions({
         {
           name: "Facebook Marketplace",
           logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-13cBLkqhKaC5MWcfkxOSc8Ihr3BoKq.png",
-          estimatedValue: facebookPrice, // Use AI-suggested price
+          estimatedValue: facebookPrice,
           timeToSell: "2-3 days",
           fees: "No fees",
           color: "bg-[#4267B2]",
@@ -221,6 +216,11 @@ export function MarketplaceOptions({
     return listingData
   }
 
+  // Add state for showing the confirmation dialog
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null)
+  const [listingPreview, setListingPreview] = useState<any>(null)
+
   // Handle posting to a marketplace
   const handlePostToMarketplace = (platformName: string) => {
     // Find the matching marketplace option
@@ -230,14 +230,31 @@ export function MarketplaceOptions({
     // Create listing data
     const listingData = createListingData(platformName, option.estimatedValue)
 
+    // Set the selected platform and listing preview
+    setSelectedPlatform(platformName)
+    setListingPreview(listingData)
+
+    // Show the confirmation dialog
+    setShowConfirmation(true)
+  }
+
+  // Function to confirm and proceed with posting
+  const confirmPostToMarketplace = () => {
+    if (!selectedPlatform || !listingPreview) return
+
     try {
       // Store in the appropriate localStorage key based on platform
-      const storageKey = platformName.toLowerCase().replace(/\s+/g, "") + "ListingData"
-      localStorage.setItem(storageKey, JSON.stringify(listingData))
-      console.log(`Successfully stored ${platformName} listing data in localStorage`)
+      const storageKey = selectedPlatform.toLowerCase().replace(/\s+/g, "") + "ListingData"
+      localStorage.setItem(storageKey, JSON.stringify(listingPreview))
+      console.log(`Successfully stored ${selectedPlatform} listing data in localStorage`)
+
+      // Mark all selected items as "resold"
+      selectedItems.forEach((item) => {
+        markItemAsProcessed(item.id, item.orderId, "resold")
+      })
 
       // Navigate to the appropriate demo page
-      switch (platformName) {
+      switch (selectedPlatform) {
         case "Facebook Marketplace":
           router.push("/facebook-demo")
           break
@@ -252,10 +269,10 @@ export function MarketplaceOptions({
           break
         default:
           // Open external URL for any other platform
-          window.open(option.url, "_blank")
+          window.open(options.find((opt) => opt.name === selectedPlatform)?.url || "#", "_blank")
       }
     } catch (error) {
-      console.error(`Error storing ${platformName} listing data in localStorage:`, error)
+      console.error(`Error storing ${selectedPlatform} listing data in localStorage:`, error)
     }
   }
 
@@ -315,6 +332,63 @@ export function MarketplaceOptions({
       <p className="text-xs text-gray-500 mt-4">
         * Estimated values are based on current market trends for items in {condition.toLowerCase()} condition.
       </p>
+      {showConfirmation && listingPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-xl font-bold mb-4">Your {selectedPlatform} Listing Preview</h3>
+
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-500">Title</p>
+                <p className="text-lg font-medium">{listingPreview.title}</p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-500">Price</p>
+                <p className="text-xl font-bold text-green-600">{listingPreview.price}</p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-500">Condition</p>
+                <p>{listingPreview.condition}</p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-500">Description</p>
+                <div className="bg-gray-50 p-3 rounded-md mt-1 whitespace-pre-line text-sm">
+                  {listingPreview.description}
+                </div>
+              </div>
+
+              {listingPreview.image && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-500">Image</p>
+                  <img
+                    src={listingPreview.image || "/placeholder.svg"}
+                    alt="Product"
+                    className="mt-1 max-h-48 object-contain bg-gray-100 rounded-md"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Edit Listing
+                </button>
+                <button
+                  onClick={confirmPostToMarketplace}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Post to {selectedPlatform}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
