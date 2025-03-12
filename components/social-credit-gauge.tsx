@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Info } from "lucide-react"
 
 interface SocialCreditGaugeProps {
   score: number // 0 to 100
@@ -8,6 +9,7 @@ interface SocialCreditGaugeProps {
 
 export function SocialCreditGauge({ score = 75 }: SocialCreditGaugeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -104,8 +106,37 @@ export function SocialCreditGauge({ score = 75 }: SocialCreditGaugeProps) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-      <div className="text-center mb-2">
-        <h3 className="text-lg font-medium">Buyer Score</h3>
+      <div className="text-center mb-2 relative">
+        <div className="flex items-center justify-center">
+          <h3 className="text-lg font-medium">Buyer Score</h3>
+          <div
+            className="ml-2 relative"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+
+            {showTooltip && (
+              <div className="absolute z-10 w-72 p-3 bg-gray-800 text-white text-xs rounded shadow-lg -right-2 top-6">
+                <div className="absolute -top-1 right-2 w-2 h-2 bg-gray-800 transform rotate-45"></div>
+                <p className="font-medium mb-1">What is the Buyer Score?</p>
+                <p className="mb-2">
+                  Your Buyer Score reflects your return history and purchasing behavior. A higher score means:
+                </p>
+                <ul className="list-disc list-inside space-y-1 mb-2">
+                  <li>Faster approval of returns</li>
+                  <li>Higher likelihood of full refunds</li>
+                  <li>Access to premium return options</li>
+                  <li>Fewer verification steps</li>
+                </ul>
+                <p>
+                  Your score is calculated based on return frequency, condition of returned items, and compliance with
+                  return policies.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
         <p className={`text-3xl font-bold mt-1 ${getScoreColor()}`}>75</p>
       </div>
       <div className="relative w-full h-32">
@@ -115,4 +146,5 @@ export function SocialCreditGauge({ score = 75 }: SocialCreditGaugeProps) {
     </div>
   )
 }
+
 

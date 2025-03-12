@@ -1,25 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  ArrowLeft,
-  ThumbsUp,
-  MessageCircle,
-  Share2,
-  Search,
-  Menu,
-  Bell,
-  Home,
-  Users,
-  ShoppingBag,
-  Video,
-  Flag,
-  MapPin,
-  MoreHorizontal,
-} from "lucide-react"
+import { ArrowLeft, ThumbsUp, MessageCircle, Share2, Search, Menu, Bell, Home, Users, ShoppingBag, Video, Flag, MapPin, MoreHorizontal } from 'lucide-react'
 import Link from "next/link"
 
-export default function ShopifyFacebookDemoPage() {
+export default function FacebookDemoPage() {
   const [loading, setLoading] = useState(true)
   const [listingData, setListingData] = useState({
     title: "Item for Sale",
@@ -34,7 +19,7 @@ export default function ShopifyFacebookDemoPage() {
   // Load listing data from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedData = localStorage.getItem("facebookListingData")
+      const storedData = localStorage.getItem("facebookmarketplaceListingData")
       if (storedData) {
         try {
           const parsedData = JSON.parse(storedData)
@@ -174,9 +159,9 @@ export default function ShopifyFacebookDemoPage() {
 
       <main className="max-w-screen-xl mx-auto px-4 py-4">
         <div className="flex items-center mb-4">
-          <Link href="/shopify/returns" className="flex items-center text-[#4267B2]">
+          <Link href="/" className="flex items-center text-[#4267B2]">
             <ArrowLeft className="h-5 w-5 mr-2" />
-            Back to Returns
+            Back to Orders
           </Link>
         </div>
 

@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Info } from "lucide-react"
 
 interface ReturnScoreCardProps {
   score: number
@@ -8,6 +9,7 @@ interface ReturnScoreCardProps {
 
 export function ReturnScoreCard({ score }: ReturnScoreCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   // Determine color based on score
   const getScoreColor = () => {
@@ -120,7 +122,36 @@ export function ReturnScoreCard({ score }: ReturnScoreCardProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-md p-4 mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-medium">Your Buyer Score</h2>
+        <div className="flex items-center">
+          <h2 className="text-lg font-medium">Your Buyer Score</h2>
+          <div
+            className="ml-2 relative"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+
+            {showTooltip && (
+              <div className="absolute z-10 w-72 p-3 bg-gray-800 text-white text-xs rounded shadow-lg left-0 top-6">
+                <div className="absolute -top-1 left-2 w-2 h-2 bg-gray-800 transform rotate-45"></div>
+                <p className="font-medium mb-1">About Your Buyer Score</p>
+                <p className="mb-2">
+                  Your Buyer Score is a measure of your return behavior and account standing. It affects:
+                </p>
+                <ul className="list-disc list-inside space-y-1 mb-2">
+                  <li>Return approval speed</li>
+                  <li>Refund eligibility</li>
+                  <li>Return method options</li>
+                  <li>Required verification steps</li>
+                </ul>
+                <p>
+                  Maintain a high score by returning items in good condition, providing accurate descriptions, and
+                  following return policies.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
         <span
           className={`text-2xl font-bold ${
             score >= 80 ? "text-green-600" : score >= 60 ? "text-yellow-600" : "text-red-600"
@@ -153,4 +184,5 @@ export function ReturnScoreCard({ score }: ReturnScoreCardProps) {
     </div>
   )
 }
+
 
