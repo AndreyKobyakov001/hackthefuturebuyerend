@@ -2,18 +2,62 @@
 
 import { useState } from "react"
 import { Check, CreditCard, DollarSign, Loader2 } from "lucide-react"
+import type { JudgmentResult } from "./ai-judgment"
 
 interface ReturnOptionsProps {
   decision: "refund" | "credit" | "reject"
   itemName: string
   itemPrice: string
   onComplete: () => void
+  analysisResult?: JudgmentResult // Add the analysis result to access the reasoning
 }
 
-export function ReturnOptions({ decision, itemName, itemPrice, onComplete }: ReturnOptionsProps) {
+export function ReturnOptions({ decision, itemName, itemPrice, onComplete, analysisResult }: ReturnOptionsProps) {
   const [loading, setLoading] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [selectedOption, setSelectedOption] = useState<"refund" | "credit" | null>(null)
+
+  // Extract a brief reason for rejection from the AI's decision reasoning
+  const getRejectReason = (): string => {
+    if (!analysisResult) return "This item is not eligible for return."
+
+    // Try to extract a concise reason from the decision reasoning
+    const reasoning = analysisResult.decision_reasoning || ""
+
+    // Check for common rejection patterns in the reasoning
+    if (reasoning.match(/damage[d]?|defect|broken|not functional|wear and tear/i)) {
+      return "Item is too damaged or shows excessive wear."
+    }
+
+    if (reasoning.match(/outside (of )?return window|past the (return )?deadline|too late|time limit/i)) {
+      return "Return window has expired."
+    }
+
+    if (reasoning.match(/policy|not covered|not eligible|against (our )?terms/i)) {
+      return "Return doesn't meet our policy requirements."
+    }
+
+    if (reasoning.match(/misuse|improper use|customer damage|user error/i)) {
+      return "Item shows signs of misuse or customer-caused damage."
+    }
+
+    if (reasoning.match(/fraud|suspicious|inconsistent|red flag/i)) {
+      return "Return request contains inconsistencies or suspicious patterns."
+    }
+
+    if (reasoning.match(/wrong item|not match|different|incorrect/i)) {
+      return "Item doesn't match what was originally purchased."
+    }
+
+    // If no specific pattern is found, extract the first sentence if it's short enough
+    const firstSentence = reasoning.split(/\.|!|\?/)[0]
+    if (firstSentence && firstSentence.length < 100) {
+      return firstSentence + "."
+    }
+
+    // Default fallback
+    return "Based on our analysis, this return doesn't qualify for a refund."
+  }
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -51,10 +95,7 @@ export function ReturnOptions({ decision, itemName, itemPrice, onComplete }: Ret
       {decision === "reject" ? (
         <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-md">
           <p className="font-medium">Return Not Eligible</p>
-          <p className="text-sm mt-1">
-            Based on our analysis, this item is not eligible for return. Please see the marketplace options below for
-            alternatives.
-          </p>
+          <p className="text-sm mt-1">{getRejectReason()} Please see the marketplace options below for alternatives.</p>
         </div>
       ) : (
         <>

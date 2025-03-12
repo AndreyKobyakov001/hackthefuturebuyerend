@@ -5,7 +5,7 @@ import "./globals.css"
 export const metadata = {
   title: "Amazon Returns",
   description: "A simulation of Amazon returns process with AI-powered analysis",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
@@ -21,6 +21,8 @@ export default function RootLayout({
     </html>
   )
 }
+
+import "./globals.css"
 
 
 

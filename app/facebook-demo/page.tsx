@@ -1,7 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, ThumbsUp, MessageCircle, Share2, Search, Menu, Bell, Home, Users, ShoppingBag, Video, Flag, MapPin, MoreHorizontal } from 'lucide-react'
+import {
+  ArrowLeft,
+  ThumbsUp,
+  MessageCircle,
+  Share2,
+  Search,
+  Menu,
+  Bell,
+  Home,
+  Users,
+  ShoppingBag,
+  Video,
+  Flag,
+  MapPin,
+  MoreHorizontal,
+} from "lucide-react"
 import Link from "next/link"
 
 export default function ShopifyFacebookDemoPage() {
@@ -18,33 +33,56 @@ export default function ShopifyFacebookDemoPage() {
 
   // Load listing data from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedData = localStorage.getItem('facebookListingData')
+    if (typeof window !== "undefined") {
+      const storedData = localStorage.getItem("facebookListingData")
       if (storedData) {
         try {
-          const parsedData = JSON.parse(storedData);
+          const parsedData = JSON.parse(storedData)
+          console.log("Loaded Facebook listing data:", parsedData)
 
-        // Ensure the description mentions the correct price
-        if (parsedData.description) {
-          parsedData.description = parsedData.description.replace(/\b\d+\.\d+\b/g, ''); // Removes standalone numbers like "8.00"
-          parsedData.description = parsedData.description.replace(/\$\d+(\.\d+)?/g, ''); // Removes dollar amounts like "$8.00"
-          parsedData.description = parsedData.description.replace(/\s+/g, ' ').trim(); // Clean up extra spaces
+          // Ensure we have all required fields
+          const validatedData = {
+            title: parsedData.title || "Item for Sale",
+            price: parsedData.price || "$35.00",
+            condition: parsedData.condition || "Good",
+            description: parsedData.description || "No description provided.",
+            timeToSell: parsedData.timeToSell || "2-3 days",
+            fees: parsedData.fees || "No fees",
+            image: parsedData.image || null,
+          }
+
+          // Ensure the description is properly formatted
+          if (validatedData.description) {
+            // Clean up any price references that might have slipped through
+            validatedData.description = validatedData.description
+              .replace(/\b\d+\.\d+\b/g, "") // Removes standalone numbers like "8.00"
+              .replace(/\$\d+(\.\d+)?/g, "") // Removes dollar amounts like "$8.00"
+              .replace(/price:.*?\.(\s|$)/i, "") // Removes "Price:..." phrases
+              .replace(/asking price is.*?\.(\s|$)/i, "") // Removes "asking price is..." phrases
+              .replace(/\s{2,}/g, " ")
+              .trim() // Clean up extra spaces
+
+            // Format the description for better readability
+            validatedData.description = validatedData.description
+              .split("\n")
+              .filter((line) => line.trim() !== "")
+              .join("\n\n")
+          }
+
+          setListingData(validatedData)
+        } catch (e) {
+          console.error("Error parsing listing data:", e)
         }
-
-        setListingData(parsedData);
-      } catch (e) {
-        console.error("Error parsing listing data:", e)
       }
     }
-  }
 
-  // Simulate loading
-  const timer = setTimeout(() => {
-    setLoading(false)
-  }, 1500)
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setLoading(false)
+    }, 1500)
 
-  return () => clearTimeout(timer)
-}, [])
+    return () => clearTimeout(timer)
+  }, [])
 
   // Format current date for the post
   const postDate = new Date().toLocaleDateString("en-US", {
@@ -241,5 +279,4 @@ export default function ShopifyFacebookDemoPage() {
     </div>
   )
 }
-
 

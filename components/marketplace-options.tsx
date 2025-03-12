@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink } from "lucide-react"
 import type { JudgmentResult } from "./ai-judgment"
 import { useRouter } from "next/navigation"
 
@@ -41,30 +41,67 @@ export function MarketplaceOptions({
       const priceValue = Number.parseFloat(originalPrice.replace(/[^0-9.]/g, ""))
 
       // Calculate base value based on condition
-      let baseValue = 0
+      let basePercentage = 0
       switch (condition.toLowerCase()) {
         case "brand new":
-          baseValue = priceValue * 0.8
+          basePercentage = 0.75 // 75% of original price
           break
         case "good":
-          baseValue = priceValue * 0.65
+          basePercentage = 0.6 // 60% of original price
           break
         case "acceptable":
-          baseValue = priceValue * 0.5
+          basePercentage = 0.45 // 45% of original price
           break
         case "poor":
-          baseValue = priceValue * 0.35
+          basePercentage = 0.3 // 30% of original price
           break
         default:
-          baseValue = priceValue * 0.6
+          basePercentage = 0.5 // 50% default
       }
+
+      // Adjust percentage based on damage severity if available
+      if (analysisResult.damage_severity) {
+        switch (analysisResult.damage_severity) {
+          case "no damage":
+            basePercentage += 0.05 // +5% for no damage
+            break
+          case "minor defect":
+            basePercentage -= 0.05 // -5% for minor defects
+            break
+          case "repairable defect":
+            basePercentage -= 0.1 // -10% for repairable defects
+            break
+          case "critical failure":
+            basePercentage -= 0.15 // -15% for critical failures
+            break
+        }
+      }
+
+      // Ensure percentage stays within 30-75% range
+      basePercentage = Math.max(0.3, Math.min(0.75, basePercentage))
+
+      // Calculate base price
+      const basePrice = priceValue * basePercentage
+
+      // Use AI-suggested price for Facebook if available, otherwise calculate it
+      const facebookPrice =
+        analysisResult.suggested_price || `$${Math.floor(basePrice * (1 + Math.random() * 0.05)).toFixed(2)}`
+
+      // Extract the numeric value from the Facebook price
+      const facebookNumericPrice = Number.parseFloat(facebookPrice.replace(/[^0-9.]/g, ""))
+
+      // Generate slightly different prices for other marketplaces, but all based on the condition
+      // Each marketplace has a slight variation but stays within the condition-appropriate range
+      const kijijiPrice = `$${(basePrice * (0.95 - Math.random() * 0.05)).toFixed(2)}`
+      const poshmarkPrice = `$${(basePrice * (0.9 - Math.random() * 0.05)).toFixed(2)}`
+      const offerupPrice = `$${(basePrice * (0.85 - Math.random() * 0.05)).toFixed(2)}`
 
       // Generate marketplace options with variations
       const marketplaceOptions: MarketplaceOption[] = [
         {
           name: "Facebook Marketplace",
           logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-13cBLkqhKaC5MWcfkxOSc8Ihr3BoKq.png",
-          estimatedValue: `$${Math.floor(baseValue * (1 + Math.random() * 0.1)).toFixed(2)}`,
+          estimatedValue: facebookPrice, // Use AI-suggested price
           timeToSell: "2-3 days",
           fees: "No fees",
           color: "bg-[#4267B2]",
@@ -73,7 +110,7 @@ export function MarketplaceOptions({
         {
           name: "Kijiji",
           logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-IU7EGyiHf0Y7YtEvZXP6Ly7SN4erVh.png",
-          estimatedValue: `$${Math.floor(baseValue * (0.95 + Math.random() * 0.1)).toFixed(2)}`,
+          estimatedValue: kijijiPrice,
           timeToSell: "4-7 days",
           fees: "Optional promotion fees",
           color: "bg-[#373373]",
@@ -82,7 +119,7 @@ export function MarketplaceOptions({
         {
           name: "Poshmark",
           logo: "/placeholder.svg?height=40&width=40",
-          estimatedValue: `$${Math.floor(baseValue * (0.9 + Math.random() * 0.1)).toFixed(2)}`,
+          estimatedValue: poshmarkPrice,
           timeToSell: "5-10 days",
           fees: "20% of sale price",
           color: "bg-[#CF0F4E]",
@@ -91,7 +128,7 @@ export function MarketplaceOptions({
         {
           name: "OfferUp",
           logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-tp21eN1SdSRHQziM6k8BkzqV8LdEzn.png",
-          estimatedValue: `$${Math.floor(baseValue * (0.85 + Math.random() * 0.1)).toFixed(2)}`,
+          estimatedValue: offerupPrice,
           timeToSell: "3-5 days",
           fees: "7.9% of sale price",
           color: "bg-[#00AB80]",
@@ -109,6 +146,118 @@ export function MarketplaceOptions({
       setOptions(marketplaceOptions)
     }
   }, [analysisResult, condition, originalPrice])
+
+  // Function to create and store listing data
+  const createListingData = (platformName: string, price: string) => {
+    // Use the AI-generated title and price if available
+    const adTitle = analysisResult.suggested_title || `${condition} ${itemName}`
+    const adPrice = price
+
+    // Create a detailed description based on the AI analysis
+    let detailedDescription = ""
+
+    // If AI provided a resale ad, use it as a base but enhance it
+    if (analysisResult.resale_ad && analysisResult.resale_ad.length > 10) {
+      // Clean the resale ad of any price references
+      detailedDescription = analysisResult.resale_ad
+        .replace(/\$\d+(\.\d+)?/g, "") // Remove prices with $ sign
+        .replace(/\b\d+\.\d+\b/g, "") // Remove decimal numbers without $ sign
+        .replace(/asking price is.*?\.(\s|$)/i, "") // Remove "asking price is..." phrases
+        .replace(/price:.*?\.(\s|$)/i, "") // Remove "Price:..." phrases
+        .replace(/\s{2,}/g, " ") // Replace multiple spaces with a single space
+        .trim() // Trim extra spaces
+    } else {
+      // Create a detailed description from scratch based on AI analysis
+      detailedDescription = `Selling a ${itemName} in ${analysisResult.condition_grade.toLowerCase()} condition.\n\n`
+
+      // Add condition details
+      if (analysisResult.damage_severity === "no damage") {
+        detailedDescription += "This item shows no signs of damage and is in excellent shape. "
+      } else if (analysisResult.damage_severity === "minor defect") {
+        detailedDescription += "This item has some minor cosmetic issues but functions perfectly. "
+      } else if (analysisResult.damage_severity === "repairable defect") {
+        detailedDescription += "This item has a fixable issue that could be repaired with minimal effort. "
+      } else {
+        detailedDescription += "This item has significant wear and is being sold as-is. "
+      }
+
+      // Add more details based on the decision reasoning
+      if (analysisResult.decision_reasoning) {
+        const cleanReasoning = analysisResult.decision_reasoning
+          .replace(/based on our policy.*$/i, "")
+          .replace(/unfortunately.*$/i, "")
+          .replace(/we recommend.*$/i, "")
+          .trim()
+
+        if (cleanReasoning) {
+          detailedDescription += cleanReasoning + "\n\n"
+        }
+      }
+
+      // Add pickup/delivery info
+      detailedDescription += "Local pickup preferred. Cash or electronic payment accepted.\n\n"
+
+      // Add a note about the condition
+      detailedDescription += `From a smoke-free home. ${analysisResult.damage_severity === "no damage" ? "No defects or issues to note." : ""}`
+    }
+
+    // Get the image from uploaded images
+    const imageToUse = uploadedImages && uploadedImages.length > 0 ? uploadedImages[0] : null
+
+    // Find the matching marketplace option
+    const option = options.find((opt) => opt.name === platformName)
+
+    // Store the listing data in localStorage with improved formatting
+    const listingData = {
+      title: adTitle,
+      price: adPrice,
+      condition: analysisResult.condition_grade,
+      description: detailedDescription,
+      timeToSell: option?.timeToSell || "3-5 days",
+      fees: option?.fees || "No fees",
+      image: imageToUse,
+    }
+
+    return listingData
+  }
+
+  // Handle posting to a marketplace
+  const handlePostToMarketplace = (platformName: string) => {
+    // Find the matching marketplace option
+    const option = options.find((opt) => opt.name === platformName)
+    if (!option) return
+
+    // Create listing data
+    const listingData = createListingData(platformName, option.estimatedValue)
+
+    try {
+      // Store in the appropriate localStorage key based on platform
+      const storageKey = platformName.toLowerCase().replace(/\s+/g, "") + "ListingData"
+      localStorage.setItem(storageKey, JSON.stringify(listingData))
+      console.log(`Successfully stored ${platformName} listing data in localStorage`)
+
+      // Navigate to the appropriate demo page
+      switch (platformName) {
+        case "Facebook Marketplace":
+          router.push("/facebook-demo")
+          break
+        case "Kijiji":
+          router.push("/kijiji-demo")
+          break
+        case "Poshmark":
+          router.push("/poshmark-demo")
+          break
+        case "OfferUp":
+          router.push("/offerup-demo")
+          break
+        default:
+          // Open external URL for any other platform
+          window.open(option.url, "_blank")
+      }
+    } catch (error) {
+      console.error(`Error storing ${platformName} listing data in localStorage:`, error)
+    }
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
@@ -152,68 +301,12 @@ export function MarketplaceOptions({
                 </div>
               </div>
 
-              {option.name === "Facebook Marketplace" ? (
-                <button
-                  onClick={() => {
-                    // Create a clean description without price mentions
-                    let cleanDescription = ""
-
-                    if (analysisResult.resale_ad) {
-                      // Clean the resale ad of any price references
-                      cleanDescription = analysisResult.resale_ad
-                        .replace(/\$\d+(\.\d+)?/g, "") // Remove prices with $ sign
-                        .replace(/\b\d+\.\d+\b/g, "") // Remove decimal numbers without $ sign
-                        .replace(/asking price is.*?\.(\s|$)/i, "") // Remove "asking price is..." phrases
-                        .replace(/price:.*?\.(\s|$)/i, "") // Remove "Price:..." phrases
-                        .replace(/\s{2,}/g, " ") // Replace multiple spaces with a single space
-                        .trim() // Trim extra spaces
-                    } else {
-                      // Create a description without price mentions
-                      cleanDescription = `Selling a ${itemName} in ${analysisResult.condition_grade.toLowerCase()} condition. ${
-                        analysisResult.damage_severity !== "no damage"
-                          ? `Has ${analysisResult.damage_severity}.`
-                          : "No damage."
-                      } Pick up only.`
-                    }
-
-                    // Get the image from uploaded images
-                    const imageToUse = uploadedImages && uploadedImages.length > 0 ? uploadedImages[0] : null
-                    console.log("Using user-uploaded image for Facebook listing:", imageToUse ? "Image found" : "No image")
-
-                    // Store the listing data in localStorage
-                    const listingData = {
-                      title: `${analysisResult.condition_grade} ${itemName} for Sale`,
-                      price: option.estimatedValue,
-                      condition: analysisResult.condition_grade,
-                      description: cleanDescription,
-                      timeToSell: option.timeToSell,
-                      fees: option.fees,
-                      image: imageToUse,
-                    }
-                    
-                    try {
-                      localStorage.setItem("facebookListingData", JSON.stringify(listingData))
-                      console.log("Successfully stored listing data in localStorage")
-                    } catch (error) {
-                      console.error("Error storing listing data in localStorage:", error)
-                    }
-                    
-                    router.push("/facebook-demo")
-                  }}
-                  className="flex items-center justify-center w-full py-2 px-4 bg-[#f3f3f3] hover:bg-[#e5e5e5] rounded-md text-sm font-medium transition-colors"
-                >
-                  Post on {option.name} <ExternalLink className="ml-2 h-4 w-4" />
-                </button>
-              ) : (
-                <a
-                  href={option.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full py-2 px-4 bg-[#f3f3f3] hover:bg-[#e5e5e5] rounded-md text-sm font-medium transition-colors"
-                >
-                  Post on {option.name} <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              )}
+              <button
+                onClick={() => handlePostToMarketplace(option.name)}
+                className="flex items-center justify-center w-full py-2 px-4 bg-[#f3f3f3] hover:bg-[#e5e5e5] rounded-md text-sm font-medium transition-colors"
+              >
+                Post on {option.name} <ExternalLink className="ml-2 h-4 w-4" />
+              </button>
             </div>
           </div>
         ))}

@@ -25,7 +25,8 @@ const orders = [
         name: "Classic White Shirt - Medium",
         price: "$49.99",
         quantity: 1,
-        image: "https://www.santaeulalia.com/cdn/shop/products/8c57dc62db191f55f2460007092b2cda_48772894-d01d-45f7-b8bc-8d4304e9eb2b.jpg?v=1706776454",
+        image:
+          "https://www.santaeulalia.com/cdn/shop/products/8c57dc62db191f55f2460007092b2cda_48772894-d01d-45f7-b8bc-8d4304e9eb2b.jpg?v=1706776454",
         description:
           "Premium cotton white shirt with button-down collar. Classic fit, machine washable. 100% cotton material, perfect for business or casual wear. Features reinforced stitching and durable buttons.",
       },
@@ -103,6 +104,4 @@ export function OrdersList() {
     </div>
   )
 }
-
-
 

@@ -1,9 +1,140 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
+// Helper function for weighted random selection
+function weightedRandom<T>(items: T[], weights: number[]): T {
+  const cumulativeWeights: number[] = []
+  let sum = 0
+
+  for (const weight of weights) {
+    sum += weight
+    cumulativeWeights.push(sum)
+  }
+
+  const random = Math.random() * sum
+
+  for (let i = 0; i < items.length; i++) {
+    if (random < cumulativeWeights[i]) {
+      return items[i]
+    }
+  }
+
+  return items[items.length - 1]
+}
+
+function shouldDetectWrongItem(): boolean {
+  // For testing purposes, randomly detect wrong items about 10% of the time
+  return Math.random() < 0.1
+}
+
+// Update the POST function to handle forceProceed flag
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userScore } = body
+    const { userScore, forceProceed = false } = body
+
+    // Check for wrong item detection (for testing purposes)
+    if (shouldDetectWrongItem() && !forceProceed) {
+      // Check if this is the first or second attempt
+      const cookieStore = cookies()
+      const wrongItemAttempt = cookieStore.get("wrong_item_attempt")
+
+      if (!wrongItemAttempt) {
+        // First attempt - set a cookie and return a gentle nudge
+        const response = NextResponse.json(
+          {
+            error:
+              "The image you uploaded doesn't seem to match the item description. Please try taking a clearer picture of the correct item.",
+            first_attempt: true,
+          },
+          { status: 400 },
+        )
+
+        // Set cookie to expire in 1 hour
+        response.cookies.set("wrong_item_attempt", "1", {
+          maxAge: 60 * 60,
+          path: "/",
+        })
+
+        return response
+      } else {
+        // Second attempt - return a warning but allow proceeding
+        const response = NextResponse.json(
+          {
+            error: "This is the second time we've detected a mismatch. Proceeding may flag your return as suspicious.",
+            first_attempt: false,
+          },
+          { status: 400 },
+        )
+
+        return response
+      }
+    }
+
+    // If we're forcing to proceed with a wrong item
+    if (forceProceed) {
+      const cookieStore = cookies()
+      const wrongItemAttempt = cookieStore.get("wrong_item_attempt")
+
+      if (wrongItemAttempt) {
+        // This is a second attempt being forced through - flag as suspicious
+        const mockResponse = {
+          condition_grade: "Acceptable",
+          condition_reasoning:
+            "The item appears to be in acceptable condition, but doesn't match the order description.",
+          damage_severity: "minor defect",
+          order_consistency: "inconsistent",
+          order_discrepancies: ["Item doesn't match order description"],
+          ai_confidence: "high",
+          human_review_flag: true,
+          comment_analysis: {
+            sentiment: "neutral",
+            fraud_risk: "high",
+            red_flags: ["Item in image doesn't match order description"],
+          },
+          user_score_impact: "reject",
+          return_timing_impact: "reject",
+          final_decision: "reject",
+          item_disposition: "reject",
+          user_score_adjustment: "-20 points",
+          new_user_score: Math.max(userScore - 20, 0),
+          decision_reasoning:
+            "Our analysis detected suspicious patterns. The item in the image doesn't appear to match what was originally purchased. This return has been flagged for human review.",
+          resale_ad: generateMockResaleAd("Poor", "critical failure"),
+          marketplace_data: {
+            facebook: {
+              estimatedValue: `$${(Math.random() * 30 + 20).toFixed(2)}`,
+              timeToSell: "5-7 days",
+              fees: "No fees",
+            },
+            kijiji: {
+              estimatedValue: `$${(Math.random() * 25 + 15).toFixed(2)}`,
+              timeToSell: "7-10 days",
+              fees: "Optional promotion fees",
+            },
+            poshmark: {
+              estimatedValue: `$${(Math.random() * 20 + 15).toFixed(2)}`,
+              timeToSell: "10-14 days",
+              fees: "20% of sale price",
+            },
+            offerup: {
+              estimatedValue: `$${(Math.random() * 15 + 10).toFixed(2)}`,
+              timeToSell: "7-10 days",
+              fees: "7.9% of sale price",
+            },
+          },
+        }
+
+        // Clear the cookie
+        const response = NextResponse.json(mockResponse)
+        response.cookies.set("wrong_item_attempt", "", {
+          maxAge: 0,
+          path: "/",
+        })
+
+        return response
+      }
+    }
 
     // Simulate processing delay
     await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -44,25 +175,71 @@ export async function POST(request: NextRequest) {
       newScore = Math.max(userScore - 5, 0)
     }
 
-    // Generate marketplace data
+    // Update the POST function to use condition-based pricing for marketplace data
+    // Replace the existing marketplace data generation with this:
+
+    // Generate marketplace data based on condition
+    const basePercentage = (() => {
+      // Base percentage based on condition
+      let percentage = 0.5 // Default 50%
+
+      switch (condition.toLowerCase()) {
+        case "brand new":
+          percentage = 0.75 // 75% of original price
+          break
+        case "good":
+          percentage = 0.6 // 60% of original price
+          break
+        case "acceptable":
+          percentage = 0.45 // 45% of original price
+          break
+        case "poor":
+          percentage = 0.3 // 30% of original price
+          break
+      }
+
+      // Adjust for damage severity
+      switch (damageSeverity) {
+        case "no damage":
+          percentage += 0.05 // +5% for no damage
+          break
+        case "minor defect":
+          percentage -= 0.05 // -5% for minor defects
+          break
+        case "repairable defect":
+          percentage -= 0.1 // -10% for repairable defects
+          break
+        case "critical failure":
+          percentage -= 0.15 // -15% for critical failures
+          break
+      }
+
+      // Ensure percentage stays within 30-75% range
+      return Math.max(0.3, Math.min(0.75, percentage))
+    })()
+
+    // Assume a base price of $50 if we don't have other information
+    const basePrice = 50
+
+    // Calculate prices with slight variations
     const marketplaceData = {
       facebook: {
-        estimatedValue: `$${(Math.random() * 50 + 50).toFixed(2)}`,
+        estimatedValue: `$${(basePrice * basePercentage * (1 + Math.random() * 0.05)).toFixed(2)}`,
         timeToSell: "2-3 days",
         fees: "No fees",
       },
       kijiji: {
-        estimatedValue: `$${(Math.random() * 40 + 45).toFixed(2)}`,
+        estimatedValue: `$${(basePrice * basePercentage * (0.95 - Math.random() * 0.05)).toFixed(2)}`,
         timeToSell: "4-7 days",
         fees: "Optional promotion fees",
       },
       poshmark: {
-        estimatedValue: `$${(Math.random() * 30 + 40).toFixed(2)}`,
+        estimatedValue: `$${(basePrice * basePercentage * (0.9 - Math.random() * 0.05)).toFixed(2)}`,
         timeToSell: "5-10 days",
         fees: "20% of sale price",
       },
       offerup: {
-        estimatedValue: `$${(Math.random() * 20 + 35).toFixed(2)}`,
+        estimatedValue: `$${(basePrice * basePercentage * (0.85 - Math.random() * 0.05)).toFixed(2)}`,
         timeToSell: "3-5 days",
         fees: "7.9% of sale price",
       },
@@ -100,27 +277,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function for weighted random selection
-function weightedRandom<T>(items: T[], weights: number[]): T {
-  const cumulativeWeights: number[] = []
-  let sum = 0
-
-  for (const weight of weights) {
-    sum += weight
-    cumulativeWeights.push(sum)
-  }
-
-  const random = Math.random() * sum
-
-  for (let i = 0; i < items.length; i++) {
-    if (random < cumulativeWeights[i]) {
-      return items[i]
-    }
-  }
-
-  return items[items.length - 1]
-}
-
 function getDecisionReasoning(decision: string, condition: string, damageSeverity: string): string {
   if (decision === "refund") {
     return `The item is in ${condition.toLowerCase()} condition with ${damageSeverity}. Based on our policy, you are eligible for a full refund.`
@@ -144,5 +300,4 @@ function generateMockResaleAd(condition: string, damageSeverity: string): string
   Contact for more details or to make an offer!
   `.trim()
 }
-
 

@@ -73,10 +73,10 @@ export function ReturnSummary({ trackingNumber = "FedEx #1234 5678 9012" }: Retu
           itemName={item?.name || ""}
           itemPrice={item?.price || "$0.00"}
           onComplete={handleReturnComplete}
+          analysisResult={analysisResult} // Pass the analysis result to ReturnOptions
         />
       )}
     </div>
   )
 }
-
 

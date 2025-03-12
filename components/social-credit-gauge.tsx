@@ -111,12 +111,8 @@ export function SocialCreditGauge({ score = 75 }: SocialCreditGaugeProps) {
       <div className="relative w-full h-32">
         <canvas ref={canvasRef} className="w-full h-full"></canvas>
       </div>
-      <div className="text-xs text-gray-500 text-center mt-2">
-        A higher score means faster, easier returns!
-      </div>
+      <div className="text-xs text-gray-500 text-center mt-2">A higher score means faster, easier returns!</div>
     </div>
   )
 }
-
-
 

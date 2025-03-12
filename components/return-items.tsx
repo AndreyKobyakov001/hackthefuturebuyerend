@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { useReturn } from "@/context/return-context"
 import { ReturnImageUpload } from "./return-image-upload"
 import { ReturnComments } from "./return-comments"
@@ -186,5 +186,4 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
     </div>
   )
 }
-
 
