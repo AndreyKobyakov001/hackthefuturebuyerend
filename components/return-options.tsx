@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, CreditCard, DollarSign, Loader2 } from "lucide-react"
+import { Check, CreditCard, DollarSign, Loader2, Recycle } from "lucide-react"
 import type { JudgmentResult } from "./ai-judgment"
 import { useReturn } from "@/context/return-context"
 
@@ -17,7 +17,7 @@ export function ReturnOptions({ decision, itemName, itemPrice, onComplete, analy
   const [loading, setLoading] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [selectedOption, setSelectedOption] = useState<"refund" | "credit" | null>(null)
-  const { selectedItems, markItemAsProcessed } = useReturn()
+  const { selectedItems, markItemAsProcessed, clearReturnForm } = useReturn()
 
   // Extract a brief reason for rejection from the AI's decision reasoning
   const getRejectReason = (): string => {
@@ -75,6 +75,9 @@ export function ReturnOptions({ decision, itemName, itemPrice, onComplete, analy
       markItemAsProcessed(item.id, item.orderId, processType)
     })
 
+    // Reset the form including setting reason back to default
+    clearReturnForm()
+
     setLoading(false)
     setCompleted(true)
     onComplete()
@@ -94,6 +97,43 @@ export function ReturnOptions({ decision, itemName, itemPrice, onComplete, analy
               : "Your store credit has been added to your account and is available for immediate use."}
           </p>
         </div>
+      </div>
+    )
+  }
+
+  // Special case for non-resellable items that are eligible for refund
+  if (decision === "refund" && analysisResult?.not_resellable) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+        <h3 className="text-lg font-medium mb-4">Return Options</h3>
+
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md mb-4">
+          <div className="flex items-start">
+            <Recycle className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
+            <div>
+              <p className="font-medium">Full Refund Approved</p>
+              <p className="text-sm mt-1">
+                Since this item appears to have been damaged during shipping or has a manufacturing defect, we'll
+                process a full refund. Please see the recycling options below.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full bg-[#f90] text-white py-2 px-4 rounded-md hover:bg-[#f0ad4e] focus:outline-none focus:ring-2 focus:ring-[#f90] focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Processing...
+            </span>
+          ) : (
+            "Process Refund"
+          )}
+        </button>
       </div>
     )
   }

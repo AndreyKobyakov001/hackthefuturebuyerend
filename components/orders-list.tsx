@@ -7,6 +7,25 @@ import { useReturn } from "@/context/return-context"
 // Sample order data
 const orders = [
   {
+    id: "1044-F0",
+    date: "March 13, 2025", // Today's date (very recent)
+    status: "Fulfilled",
+    total: "$199.99",
+    items: [
+      {
+        id: 6,
+        name: "Tiffany Home Essentials Wine Glasses (Set of 4)",
+        price: "$199.99",
+        quantity: 1,
+        image:
+          "https://media.tiffany.com/is/image/Tiffany/EcomItemL2/tiffany-home-essentialswhite-wine-glasses-73480396_1062587_ED.jpg?&op_usm=2.0,1.0,6.0&$cropN=0.1,0.1,0.8,0.8&defaultImage=NoImageAvailableInternal&",
+        description:
+          "Elegant crystal wine glasses from Tiffany Home Essentials collection. Set of 4 glasses, perfect for entertaining or special occasions. Hand-blown crystal with delicate stems and a classic design. Hand wash only.",
+      },
+    ],
+    shippingAddress: "150 Elgin Street, Ottawa, ON K2P 1L4",
+  },
+  {
     id: "1045-F1",
     date: "March 4, 2025",
     status: "Fulfilled",

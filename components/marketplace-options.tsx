@@ -34,7 +34,7 @@ export function MarketplaceOptions({
   const [options, setOptions] = useState<MarketplaceOption[]>([])
   const [selectedOption, setSelectedOption] = useState<string | null>("Facebook Marketplace")
   const router = useRouter()
-  const { selectedItems, markItemAsProcessed } = useReturn()
+  const { selectedItems, markItemAsProcessed, clearReturnForm } = useReturn()
 
   useEffect(() => {
     // Generate marketplace options based on the analysis result
@@ -252,6 +252,9 @@ export function MarketplaceOptions({
       selectedItems.forEach((item) => {
         markItemAsProcessed(item.id, item.orderId, "resold")
       })
+
+      // Reset the form including setting reason back to default
+      clearReturnForm()
 
       // Navigate to the appropriate demo page
       switch (selectedPlatform) {

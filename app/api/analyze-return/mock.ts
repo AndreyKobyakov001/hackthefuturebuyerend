@@ -31,7 +31,14 @@ function shouldDetectWrongItem(): boolean {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userScore, forceProceed = false } = body
+    const {
+      userScore,
+      forceProceed = false,
+      daysSincePurchase = 3,
+      orderDescription = "Generic Item",
+      userComment = "",
+      reason = "",
+    } = body
 
     // Check for wrong item detection (for testing purposes)
     if (shouldDetectWrongItem() && !forceProceed) {
@@ -134,6 +141,87 @@ export async function POST(request: NextRequest) {
 
         return response
       }
+    }
+
+    // Update the special case handling in the POST function
+    // Replace the existing special case code with this:
+
+    // Special case for critically damaged items that appear to be shipping/manufacturing defects
+    const isFragileItem =
+      orderDescription.toLowerCase().includes("glass") ||
+      orderDescription.toLowerCase().includes("crystal") ||
+      orderDescription.toLowerCase().includes("electronic")
+
+    const isDefectiveReason = reason === "Item defective" || reason === "Item damaged" || reason === "Arrived damaged"
+
+    const isShippingOrManufacturingIssue =
+      userComment.toLowerCase().includes("broken") ||
+      userComment.toLowerCase().includes("shattered") ||
+      userComment.toLowerCase().includes("damaged in shipping") ||
+      userComment.toLowerCase().includes("arrived broken") ||
+      userComment.toLowerCase().includes("manufacturing defect")
+
+    const hasSignsOfUse =
+      userComment.toLowerCase().includes("stain") ||
+      userComment.toLowerCase().includes("tear") ||
+      userComment.toLowerCase().includes("wrinkle") ||
+      userComment.toLowerCase().includes("worn") ||
+      userComment.toLowerCase().includes("used")
+
+    // Only apply special case if it's a fragile item with a defective reason
+    // and comments suggesting shipping/manufacturing issues, with no signs of user wear
+    if (isFragileItem && (isDefectiveReason || isShippingOrManufacturingIssue) && !hasSignsOfUse) {
+      // Force the condition to be poor and damage to be critical
+      const mockResponse = {
+        condition_grade: "Poor",
+        condition_reasoning: "The item appears to be broken with visible cracks and chips.",
+        damage_severity: "critical failure",
+        order_consistency: "consistent",
+        order_discrepancies: [],
+        ai_confidence: "high",
+        human_review_flag: false,
+        comment_analysis: {
+          sentiment: "negative",
+          fraud_risk: "low",
+          red_flags: [],
+        },
+        user_score_impact: "refund",
+        return_timing_impact: "refund",
+        final_decision: "refund",
+        item_disposition: "landfill",
+        user_score_adjustment: "+2 points",
+        new_user_score: Math.min(userScore + 2, 100),
+        decision_reasoning:
+          "While the item is critically damaged, it appears to have been damaged during shipping or has a manufacturing defect. " +
+          "Since the damage is not due to user wear or misuse, we'll process a full refund. " +
+          "Please consider recycling this item as it cannot be resold.",
+        resale_ad: "",
+        not_resellable: true,
+        marketplace_data: {
+          facebook: {
+            estimatedValue: "Not resellable",
+            timeToSell: "N/A",
+            fees: "N/A",
+          },
+          kijiji: {
+            estimatedValue: "Not resellable",
+            timeToSell: "N/A",
+            fees: "N/A",
+          },
+          poshmark: {
+            estimatedValue: "Not resellable",
+            timeToSell: "N/A",
+            fees: "N/A",
+          },
+          offerup: {
+            estimatedValue: "Not resellable",
+            timeToSell: "N/A",
+            fees: "N/A",
+          },
+        },
+      }
+
+      return NextResponse.json(mockResponse)
     }
 
     // Simulate processing delay

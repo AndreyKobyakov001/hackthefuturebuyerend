@@ -179,10 +179,11 @@ export function ReturnProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Add the implementation of the clearReturnForm function
+  // Update the clearReturnForm function to also reset the reason to "Wrong item received"
   const clearReturnForm = () => {
     setCommentsValue("")
     setUploadedImagesState([])
+    setReasonValue("Wrong item received") // Reset reason to default
   }
 
   // Add the function to the context provider value

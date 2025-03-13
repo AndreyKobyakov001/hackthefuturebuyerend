@@ -8,6 +8,7 @@ import { ReturnComments } from "./return-comments"
 import { MarketplaceOptions } from "./marketplace-options"
 import type { JudgmentResult } from "./ai-judgment"
 import { useRouter } from "next/navigation"
+import { RecyclingOptions } from "./recycling-options"
 
 interface ReturnItemsProps {
   orderNumber?: string
@@ -17,13 +18,14 @@ interface ReturnItemsProps {
 
 // Updated order dates in descending order (most recent first)
 const orderDates: Record<string, string> = {
-  "1045-F1": "March 4, 2025", // Most recent - White shirt
+  "1044-F0": "March 13, 2025", // Today - Wine glasses
+  "1045-F1": "March 4, 2025", // White shirt
   "1046-F2": "February 13, 2025",
   "1047-F3": "January 8, 2025", // Oldest
 }
 
 export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: ReturnItemsProps) {
-  const { selectedItems, updateItemQuantity, reason, setReason, uploadedImages } = useReturn()
+  const { selectedItems, updateItemQuantity, reason, setReason, uploadedImages, comments } = useReturn()
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null)
   const router = useRouter()
 
@@ -54,6 +56,36 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
   // Check if the image doesn't match the description (wrong item)
   const isWrongItem = analysisResult && analysisResult.order_consistency === "inconsistent"
 
+  // Update the isRecyclingEligible function to focus on damage type rather than time window
+  const isRecyclingEligible = (item: any, result: JudgmentResult | null) => {
+    if (!result) return false
+
+    // Check if the item is critically damaged
+    const isCriticallyDamaged = result.damage_severity === "critical failure"
+
+    // Check if the item is a type that could be damaged in shipping (glass, electronics)
+    const isFragileItem =
+      item.name.toLowerCase().includes("glass") ||
+      item.name.toLowerCase().includes("crystal") ||
+      item.name.toLowerCase().includes("electronic") ||
+      item.name.toLowerCase().includes("ceramic")
+
+    // Check if the return reason indicates a defect or shipping damage
+    const isDefectiveReason = reason === "Item defective" || reason === "Item damaged" || reason === "Arrived damaged"
+
+    // Check if the comments suggest shipping damage or manufacturing defect
+    const isShippingOrManufacturingIssue =
+      comments.toLowerCase().includes("broken") ||
+      comments.toLowerCase().includes("shattered") ||
+      comments.toLowerCase().includes("damaged in shipping") ||
+      comments.toLowerCase().includes("arrived broken") ||
+      comments.toLowerCase().includes("manufacturing defect")
+
+    // Only eligible if it's a fragile item that's critically damaged,
+    // with a defective reason, and comments suggesting shipping/manufacturing issues
+    return isCriticallyDamaged && isFragileItem && (isDefectiveReason || isShippingOrManufacturingIssue)
+  }
+
   // Redirect back to orders page if no items are selected
   useEffect(() => {
     if (selectedItems.length === 0) {
@@ -76,6 +108,9 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
   }
 
   const item = selectedItems.length > 0 ? selectedItems[0] : null
+
+  // Determine if the current item is eligible for recycling
+  const showRecyclingOptions = item && analysisResult && isRecyclingEligible(item, analysisResult)
 
   return (
     <div className="space-y-6">
@@ -171,21 +206,31 @@ export function ReturnItems({ orderNumber, shippingAddress, analysisResult }: Re
             <option value="Customer changed their mind">Customer changed their mind</option>
             <option value="Item damaged">Item damaged</option>
             <option value="Item defective">Item defective</option>
+            <option value="Arrived damaged">Arrived damaged</option>
             <option value="Item not as described">Item not as described</option>
           </select>
         </div>
       )}
 
-      {/* Only show marketplace options after analysis is complete, if the decision is "reject", and the item matches the description */}
-      {analysisResult && analysisResult.final_decision === "reject" && item && !isWrongItem && (
-        <MarketplaceOptions
-          itemName={item.name}
-          condition={analysisResult.condition_grade}
-          originalPrice={item.price}
-          analysisResult={analysisResult}
-          uploadedImages={uploadedImages}
-        />
+      {/* Show recycling options for eligible items */}
+      {analysisResult && item && !isWrongItem && showRecyclingOptions && (
+        <RecyclingOptions itemName={item.name} condition={analysisResult.condition_grade} />
       )}
+
+      {/* Show marketplace options for rejected items that don't qualify for recycling */}
+      {analysisResult &&
+        analysisResult.final_decision === "reject" &&
+        item &&
+        !isWrongItem &&
+        !showRecyclingOptions && (
+          <MarketplaceOptions
+            itemName={item.name}
+            condition={analysisResult.condition_grade}
+            originalPrice={item.price}
+            analysisResult={analysisResult}
+            uploadedImages={uploadedImages}
+          />
+        )}
 
       {/* Show a message if the return is rejected and the item doesn't match the description */}
       {analysisResult && analysisResult.final_decision === "reject" && isWrongItem && (

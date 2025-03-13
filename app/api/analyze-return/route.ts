@@ -215,6 +215,49 @@ function generateMarketplaceData(jsonResponse: any, orderDescription: string): a
   }
 }
 
+// Update the isEligibleForRecycling function to focus on damage type rather than time window
+function isEligibleForRecycling(
+  jsonResponse: any,
+  orderDescription: string,
+  daysSincePurchase: number,
+  userComment: string,
+  reason: string,
+): boolean {
+  // Check if the item is critically damaged
+  const isCriticallyDamaged = jsonResponse.damage_severity === "critical failure"
+
+  // Check if the item is a type that could be damaged in shipping (glass, electronics)
+  const isFragileItem =
+    orderDescription.toLowerCase().includes("glass") ||
+    orderDescription.toLowerCase().includes("crystal") ||
+    orderDescription.toLowerCase().includes("electronic") ||
+    orderDescription.toLowerCase().includes("ceramic")
+
+  // Check if the return reason indicates a defect or shipping damage
+  const isDefectiveReason = reason === "Item defective" || reason === "Item damaged" || reason === "Arrived damaged"
+
+  // Check if the comments suggest shipping damage or manufacturing defect
+  const isShippingOrManufacturingIssue =
+    userComment.toLowerCase().includes("broken") ||
+    userComment.toLowerCase().includes("shattered") ||
+    userComment.toLowerCase().includes("damaged in shipping") ||
+    userComment.toLowerCase().includes("arrived broken") ||
+    userComment.toLowerCase().includes("manufacturing defect")
+
+  // Check for signs of user wear/use that should be rejected
+  const hasSignsOfUse =
+    userComment.toLowerCase().includes("stain") ||
+    userComment.toLowerCase().includes("tear") ||
+    userComment.toLowerCase().includes("wrinkle") ||
+    userComment.toLowerCase().includes("worn") ||
+    userComment.toLowerCase().includes("used")
+
+  // Only eligible if it's a fragile item that's critically damaged,
+  // with a defective reason, and comments suggesting shipping/manufacturing issues,
+  // and NO signs of user wear/use
+  return isCriticallyDamaged && isFragileItem && (isDefectiveReason || isShippingOrManufacturingIssue) && !hasSignsOfUse
+}
+
 // Update the POST function to handle forceProceed flag
 export async function POST(request: NextRequest) {
   try {
@@ -228,6 +271,7 @@ export async function POST(request: NextRequest) {
       harshMode = false,
       useMock = false,
       forceProceed = false, // Add this flag to handle forced proceeding
+      reason,
     } = body
 
     if (!imageUrl || !userComment || userScore === undefined || daysSincePurchase === undefined || !orderDescription) {
@@ -427,6 +471,29 @@ OUTPUT AS JSON. INCLUDE ALL FIELDS EVEN IF EMPTY:
             return response
           }
         }
+
+        // Update the special case handling in the POST function
+        // Replace the existing special case code with this:
+
+        // Special case for critically damaged items that appear to be shipping/manufacturing defects
+        if (isEligibleForRecycling(jsonResponse, orderDescription, daysSincePurchase, userComment, body.reason || "")) {
+          // Override to provide a refund but mark as not resellable
+          jsonResponse.final_decision = "refund"
+          jsonResponse.user_score_impact = "refund"
+          jsonResponse.return_timing_impact = "refund"
+          jsonResponse.user_score_adjustment = "+2 points"
+          jsonResponse.new_user_score = Math.min(userScore + 2, 100)
+          jsonResponse.decision_reasoning =
+            "While the item is critically damaged, it appears to have been damaged during shipping or has a manufacturing defect. " +
+            "Since the damage is not due to user wear or misuse, we'll process a full refund. " +
+            "Please consider recycling this item as it cannot be resold."
+
+          // Mark as not resellable
+          jsonResponse.not_resellable = true
+        }
+
+        // Remove the old special case code that was based on the 10-day window
+        // Delete or comment out this block:
 
         // If we're forcing to proceed with a wrong item, or if it's not a wrong item
         // Check if this is a second wrong item attempt that we're forcing through
