@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { OrderCard } from "./order-card"
-import { useReturn } from "@/context/return-context"
+import { useState } from "react";
+import { OrderCard } from "./order-card";
+import { useReturn } from "@/context/return-context";
 
 // Sample order data
 const orders = [
@@ -10,17 +10,16 @@ const orders = [
     id: "1044-F0",
     date: "March 13, 2025", // Today's date (very recent)
     status: "Fulfilled",
-    total: "$199.99",
+    total: "$11.99",
     items: [
       {
         id: 6,
-        name: "Tiffany Home Essentials Wine Glasses (Set of 4)",
-        price: "$199.99",
+        name: " Diet Coke (Pack of 10)",
+        price: "$11.99",
         quantity: 1,
         image:
-          "https://media.tiffany.com/is/image/Tiffany/EcomItemL2/tiffany-home-essentialswhite-wine-glasses-73480396_1062587_ED.jpg?&op_usm=2.0,1.0,6.0&$cropN=0.1,0.1,0.8,0.8&defaultImage=NoImageAvailableInternal&",
-        description:
-          "Elegant crystal wine glasses from Tiffany Home Essentials collection. Set of 4 glasses, perfect for entertaining or special occasions. Hand-blown crystal with delicate stems and a classic design. Hand wash only.",
+          "https://www.coca-cola.com/content/dam/onexp/gb/en/brands/diet-coke/Product-Information-diet-coke.jpg",
+        description: "Pack of 6 Diet Coke, 250ml cans. ",
       },
     ],
     shippingAddress: "150 Elgin Street, Ottawa, ON K2P 1L4",
@@ -64,7 +63,8 @@ const orders = [
         name: "Portable Bluetooth Speaker",
         price: "$59.99",
         quantity: 1,
-        image: "https://multimedia.bbycastatic.ca/multimedia/products/500x500/137/13797/13797305.jpg",
+        image:
+          "https://multimedia.bbycastatic.ca/multimedia/products/500x500/137/13797/13797305.jpg",
         description:
           "Compact waterproof Bluetooth speaker with 360° sound, 12-hour playtime, and built-in microphone. IPX7 waterproof rating makes it perfect for outdoor use. Includes USB-C charging cable and carabiner clip for easy attachment to bags.",
       },
@@ -73,7 +73,8 @@ const orders = [
         name: "USB-C Charging Cable (2-pack)",
         price: "$29.96",
         quantity: 1,
-        image: "https://m.media-amazon.com/images/I/71NWeErdDtL._AC_UF894,1000_QL80_.jpg",
+        image:
+          "https://m.media-amazon.com/images/I/71NWeErdDtL._AC_UF894,1000_QL80_.jpg",
         description:
           "Set of two 6ft USB-C to USB-A charging cables with nylon braided exterior for durability. Supports fast charging up to 3A and data transfer speeds up to 480Mbps. Compatible with all USB-C devices including smartphones, tablets, and laptops.",
       },
@@ -98,34 +99,36 @@ const orders = [
     ],
     shippingAddress: "150 Elgin Street, Ottawa, ON K2P 1L4",
   },
-]
+];
 
 export function OrdersList() {
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null)
-  const { processedItems, clearReturnForm } = useReturn()
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const { processedItems, clearReturnForm } = useReturn();
 
   const toggleOrderExpansion = (orderId: string) => {
     if (expandedOrderId === orderId) {
-      setExpandedOrderId(null)
+      setExpandedOrderId(null);
     } else {
-      setExpandedOrderId(orderId)
+      setExpandedOrderId(orderId);
       // Clear the form when expanding an order to select items
-      clearReturnForm()
+      clearReturnForm();
     }
-  }
+  };
 
   // Don't filter out orders where all items have been processed
   // Just use the original orders array
-  const ordersToDisplay = orders
+  const ordersToDisplay = orders;
 
   // If there are no orders to display
   if (ordersToDisplay.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
-        <h3 className="text-lg font-medium text-gray-700 mb-2">No orders available</h3>
+        <h3 className="text-lg font-medium text-gray-700 mb-2">
+          No orders available
+        </h3>
         <p className="text-gray-500">No orders found.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -139,6 +142,5 @@ export function OrdersList() {
         />
       ))}
     </div>
-  )
+  );
 }
-
